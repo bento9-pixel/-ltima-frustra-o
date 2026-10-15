@@ -3026,7 +3026,20 @@ function renderAulas(){
   const lista = db.aulas.filter(a =>
     (!aulaFiltro.classeId || a.classeId===aulaFiltro.classeId) &&
     (!aulaFiltro.disciplinaId || a.disciplinaId===aulaFiltro.disciplinaId)
-  ).slice().sort((a,b)=> (b.data||'').localeCompare(a.data||'') || (b.licao||'').localeCompare(a.licao||''));
+  ).slice().sort((a,b)=>{
+    /* ordem das lições: 1, 2, 3 … 9, 10, 11 (número, não texto); sem número vão para o fim */
+    const la=String(a.licao||'').trim(), lb=String(b.licao||'').trim();
+    if(la && !lb) return -1;
+    if(!la && lb) return 1;
+    if(la && lb){
+      const c=la.localeCompare(lb,'pt',{numeric:true});
+      if(c) return c;
+      const cc=((db.classes.find(x=>x.id===a.classeId)||{}).nome||'').localeCompare((db.classes.find(x=>x.id===b.classeId)||{}).nome||'','pt',{numeric:true});
+      if(cc) return cc;
+      return (a.data||'').localeCompare(b.data||'');
+    }
+    return (b.data||'').localeCompare(a.data||'');
+  });
 
   if(esVazio(lista)){
     listWrap.innerHTML = emptyState('Sem aulas registadas com estes filtros.', '+ Nova aula', 'openAulaModal(null)');
